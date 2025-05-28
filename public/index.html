@@ -1,1 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>One Way Interview</title>
+</head>
+<body>
+  <h1>One Way Interview</h1>
+  <p>Click to start recording your interview</p>
 
+  <video id="preview" autoplay muted></video><br>
+  <button onclick="startRecording()">Start</button>
+  <button onclick="stopRecording()">Stop & Upload</button>
+
+  <script>
+    let mediaRecorder;
+    let recordedChunks = [];
+
+    async function startRecording() {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      document.getElementById("preview").srcObject = stream;
+      mediaRecorder = new MediaRecorder(stream);
+
+      mediaRecorder.ondataavailable = event => recordedChunks.push(event.data);
+      mediaRecorder.onstop = async () => {
+        const blob = new Blob(recordedChunks, { type: 'video/webm' });
+        const formData = new FormData();
+        formData.append("video", blob, "interview.webm");
+
+        await fetch("/upload", {
+          method: "POST",
+          body: formData
+        });
+
+        alert("Video uploaded!");
+      };
+
+      recordedChunks = [];
+      mediaRecorder.start();
+    }
+
+    function stopRecording() {
+      mediaRecorder.stop();
+    }
+  </script>
+</body>
+</html>
